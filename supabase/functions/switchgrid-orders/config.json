@@ -1,0 +1,13 @@
+{
+  "name": "switchgrid-orders",
+  "version": "1.0.0",
+  "description": "Switchgrid orders management for data retrieval",
+  "runtime": "deno",
+  "entrypoint": "index.ts",
+  "methods": ["GET", "POST", "OPTIONS"],
+  "verify_jwt": false,
+  "env": {
+    "SWITCHGRID_BASE_URL": "https://app.switchgrid.tech/enedis/v2",
+    "SWITCHGRID_TOKEN": "c85136b872194092cf9d013c6fe6ce5c"
+  }
+}

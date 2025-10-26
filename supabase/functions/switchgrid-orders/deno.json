@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-env index.ts"
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.168.0/"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "esnext"]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "6.9.4": {
+    "date": "2025-10-25",
+    "description": "Correction du calcul de la TVA :",
+    "features": [
+      "🔧 Correction du taux de TVA de 5.5% à 10% pour puissances > 3 kWc",
+      "🔧 Application correcte du taux 5.5% pour puissances ≤ 3 kWc",
+      "📊 Mise à jour du calcul du montant HT et TTC"
+    ]
+  },
+  "6.9.3": {
+    "date": "2025-01-12",
+    "description": "Implémentation de R63_SYNC pour récupération courbe de charge (mode diagnostic) :",
+    "features": [
+      "🆕 Edge Function switchgrid-r63-sync pour récupération courbe de charge",
+      "🔧 Requête R63_SYNC avec direction SOUTIRAGE sur 7 jours",
+      "🔧 Suppression du paramètre period pour voir format par défaut Switchgrid",
+      "🔧 Mode diagnostic : retourne rawData brut pour analyse de structure",
+      "🔧 Logs détaillés pour comprendre le format de données Switchgrid",
+      "🔧 Correction format période : 30min au lieu de 30m",
+      "📊 Interface DataRetrieval mise à jour avec R63_SYNC",
+      "📊 Affichage rawData dans alert popup pour inspection",
+      "🛡️ LOADCURVE mis de côté temporairement",
+      "⚡ Polling automatique jusqu'à SUCCESS de la requête"
+    ],
+    "notes": [
+      "Version diagnostic pour comprendre le format de données R63_SYNC",
+      "Une fois le format identifié, le parsing sera adapté",
+      "R63_SYNC remplace LOADCURVE pour courbe de charge",
+      "Utilise direction SOUTIRAGE (consommation) au lieu de CONSOMMATION"
+    ]
+  },
+  "6.9.2": {
+    "date": "2025-01-12",
+    "description": "Amélioration majeure de la récupération de courbe de charge annuelle :",
+    "features": [
+      "Suppression de la limitation Supabase à 1000 points via pagination intelligente",
+      "Récupération par batches de 1000 points jusqu'à 8760 points maximum",
+      "Calcul précis de la période annuelle (365 jours exacts)",
+      "Logs détaillés du processus de récupération par tranches",
+      "Affichage du nombre réel de points reçus de l'API Enedis",
+      "Identification des semaines échouées pour retry ultérieur",
+      "Optimisation des délais entre requêtes (200ms au lieu de 300ms)",
+      "Gestion robuste des fréquences variables (30min/1h)",
+      "Amélioration de la couverture de données annuelles",
+      "Calcul dynamique du pourcentage de couverture réel"
+    ]
+  },
+  "6.9.1": {
+    "date": "2025-06-28",
+    "description": "Amélioration de la persistance des données de courbe de charge annuelle :",
+    "features": [
+      "Sauvegarde des courbes de charge annuelles dans le localStorage",
+      "Chargement automatique des données au démarrage",
+      "Amélioration de la gestion des erreurs API Enedis",
+      "Ajout d'un mécanisme de retry avec backoff exponentiel",
+      "Optimisation des performances et de la stabilité",
+      "Meilleure gestion des erreurs temporaires du serveur Enedis"
+    ]
+  }
+}
