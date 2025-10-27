@@ -2,6 +2,39 @@ import { PVGISParams, PVGISResponse } from '../../types/pvgis';
 
 const PVGIS_URL = 'https://re.jrc.ec.europa.eu/api/v5_2/PVcalc';
 
+async function fetchWithCorsProxy(url: string): Promise<Response> {
+  // Liste de proxies CORS publics avec fallback
+  const corsProxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    'https://api.codetabs.com/v1/proxy?quest='
+  ];
+
+  for (const proxy of corsProxies) {
+    try {
+      const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
+      console.log(`🔄 Tentative avec proxy: ${proxy}`);
+
+      const response = await fetch(proxyUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log(`✅ Proxy fonctionnel: ${proxy}`);
+        return response;
+      }
+    } catch (error) {
+      console.warn(`⚠️ Proxy échoué: ${proxy}`, error);
+      continue;
+    }
+  }
+
+  throw new Error('Tous les proxies CORS ont échoué');
+}
+
 export async function getPVGISData(params: PVGISParams): Promise<PVGISResponse> {
   const queryParams = new URLSearchParams({
     lat: params.lat.toString(),
@@ -17,53 +50,37 @@ export async function getPVGISData(params: PVGISParams): Promise<PVGISResponse> 
     browser: '1'
   });
 
-  // Détecter l'environnement et choisir la bonne stratégie
   const isDevelopment = import.meta.env.DEV;
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
   try {
-    // En production, utiliser la Edge Function Supabase comme proxy
-    if (!isDevelopment && SUPABASE_URL) {
-      console.log('🔬 Test PVGIS v5.3 via Edge Function...');
+    // En développement, utiliser le proxy Vite
+    if (isDevelopment) {
+      console.log('🔬 Test PVGIS v5.3 via proxy Vite...');
 
-      // Tenter d'abord v5.3 avec SARAH3 et crystSi2025
       const v53Params = new URLSearchParams({
         ...Object.fromEntries(queryParams),
         raddatabase: 'PVGIS-SARAH3',
-        pvtechchoice: 'crystSi2025',
-        version: 'v5_3',
-        endpoint: 'PVcalc'
+        pvtechchoice: 'crystSi2025'
       });
 
-      const v53Response = await fetch(`${SUPABASE_URL}/functions/v1/pvgis-proxy?${v53Params.toString()}`);
+      const v53Response = await fetch(`/pvgis-api/v5_3/PVcalc?${v53Params.toString()}`);
 
       if (v53Response.ok) {
         const v53Data: PVGISResponse = await v53Response.json();
-
         if (v53Data?.outputs?.totals?.fixed?.E_y) {
           console.log('✅ PVGIS v5.3 avec SARAH3 disponible !');
           return v53Data;
         }
       }
 
-      console.warn('⚠️ PVGIS v5.3 non disponible, fallback vers v5.2...');
+      console.warn('⚠️ PVGIS v5.3 non disponible, test v5.2...');
+      const response = await fetch(`/pvgis-api/v5_2/PVcalc?${queryParams.toString()}`);
 
-      // Fallback vers v5.2 avec SARAH2
-      const v52Params = new URLSearchParams({
-        ...Object.fromEntries(queryParams),
-        version: 'v5_2',
-        endpoint: 'PVcalc'
-      });
-
-      const v52Response = await fetch(`${SUPABASE_URL}/functions/v1/pvgis-proxy?${v52Params.toString()}`);
-
-      if (!v52Response.ok) {
-        const errorData = await v52Response.json().catch(() => ({}));
-        throw new Error(`Erreur PVGIS (${v52Response.status}): ${errorData.message || v52Response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Erreur PVGIS (${response.status}): ${response.statusText}`);
       }
 
-      const data: PVGISResponse = await v52Response.json();
-
+      const data: PVGISResponse = await response.json();
       if (!data?.outputs?.totals?.fixed?.E_y) {
         throw new Error('Format de réponse PVGIS invalide');
       }
@@ -72,35 +89,39 @@ export async function getPVGISData(params: PVGISParams): Promise<PVGISResponse> 
       return data;
     }
 
-    // En développement, utiliser le proxy Vite
-    console.log('🔬 Test PVGIS v5.3 via proxy Vite...');
+    // En production, utiliser un proxy CORS public
+    console.log('🔬 Test PVGIS v5.3 via proxy CORS...');
 
+    // Tenter d'abord v5.3 avec SARAH3 et crystSi2025
     const v53Params = new URLSearchParams({
       ...Object.fromEntries(queryParams),
       raddatabase: 'PVGIS-SARAH3',
       pvtechchoice: 'crystSi2025'
     });
 
-    const v53Response = await fetch(`/pvgis-api/v5_3/PVcalc?${v53Params.toString()}`);
+    const v53Url = `https://re.jrc.ec.europa.eu/api/v5_3/PVcalc?${v53Params.toString()}`;
 
-    if (v53Response.ok) {
-      console.log('✅ PVGIS v5.3 avec SARAH3 et crystSi2025 disponible !');
+    try {
+      const v53Response = await fetchWithCorsProxy(v53Url);
       const v53Data: PVGISResponse = await v53Response.json();
 
       if (v53Data?.outputs?.totals?.fixed?.E_y) {
+        console.log('✅ PVGIS v5.3 avec SARAH3 disponible !');
         return v53Data;
       }
+    } catch (error) {
+      console.warn('⚠️ PVGIS v5.3 non disponible, fallback vers v5.2...', error);
     }
 
-    console.warn('⚠️ PVGIS v5.3 non disponible, test v5.2...');
+    // Fallback vers v5.2 avec SARAH2
+    const v52Url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?${queryParams.toString()}`;
+    const v52Response = await fetchWithCorsProxy(v52Url);
 
-    const response = await fetch(`/pvgis-api/v5_2/PVcalc?${queryParams.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Erreur PVGIS (${response.status}): ${response.statusText}`);
+    if (!v52Response.ok) {
+      throw new Error(`Erreur PVGIS (${v52Response.status}): ${v52Response.statusText}`);
     }
 
-    const data: PVGISResponse = await response.json();
+    const data: PVGISResponse = await v52Response.json();
 
     if (!data?.outputs?.totals?.fixed?.E_y) {
       throw new Error('Format de réponse PVGIS invalide');
