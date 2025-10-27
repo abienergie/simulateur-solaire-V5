@@ -6,11 +6,9 @@ export async function fetchPVGISHourly(params: PVGISHourlyParams): Promise<Proce
   try {
     console.log('🔄 Appel API PVGIS horaire avec paramètres:', params);
 
-    // Détecter si on est en développement ou en production
+    // Détecter l'environnement et choisir la bonne stratégie
     const isDevelopment = import.meta.env.DEV;
-    const baseUrl = isDevelopment
-      ? '/pvgis-api'  // Utiliser le proxy en développement
-      : 'https://re.jrc.ec.europa.eu/api';  // Appel direct en production
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
     // 1) Années sûres pour SARAH3
     const startyear = Math.min(params.startyear, LAST_SARAH3_YEAR);
@@ -40,14 +38,24 @@ export async function fetchPVGISHourly(params: PVGISHourlyParams): Promise<Proce
       queryParams.set('optimalinclination', '1');
     }
 
-    const apiUrl = `${baseUrl}/v5_3/seriescalc?${queryParams.toString()}`;
-    console.log('🌐 URL API PVGIS:', apiUrl);
+    let apiUrl: string;
+
+    // En production, utiliser la Edge Function Supabase comme proxy
+    if (!isDevelopment && SUPABASE_URL) {
+      queryParams.set('version', 'v5_3');
+      queryParams.set('endpoint', 'seriescalc');
+      apiUrl = `${SUPABASE_URL}/functions/v1/pvgis-proxy?${queryParams.toString()}`;
+      console.log('🌐 URL API PVGIS (via Edge Function):', apiUrl);
+    } else {
+      // En développement, utiliser le proxy Vite
+      apiUrl = `/pvgis-api/v5_3/seriescalc?${queryParams.toString()}`;
+      console.log('🌐 URL API PVGIS (via Vite proxy):', apiUrl);
+    }
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
-        // 2. CORS / headers : pas de User-Agent côté navigateur
       }
     });
 
