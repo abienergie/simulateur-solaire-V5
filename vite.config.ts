@@ -38,7 +38,7 @@ export default defineConfig({
       }
     })
   ],
-  base: './', // Utiliser des chemins relatifs
+  base: '/simulateur-solaire-V5/', // Base path pour GitHub Pages
   build: {
     outDir: 'dist',
     sourcemap: false,
