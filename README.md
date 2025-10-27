@@ -34,7 +34,7 @@ npm run dev
 
 ## Déploiement
 
-Le site est automatiquement déployé sur GitHub Pages à l'adresse : https://abienergie.github.io/simulateur-solaire/
+Le site est automatiquement déployé sur GitHub Pages à l'adresse : https://abienergie.github.io/simulateur-solaire-V5/
 
 Pour déployer manuellement :
 
@@ -62,4 +62,4 @@ git checkout main
 
 ## Version
 
-6.8.2 - Mars 2024
+6.8.2 - Mars 2024Déploiement avec secrets configurés
