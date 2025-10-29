@@ -15,6 +15,7 @@ export default function Report() {
   const { clientInfo, address } = useClient();
   const { params } = useSolarData();
   const [pdl, setPdl] = useState('');
+  const [civilite, setCivilite] = useState(clientInfo.civilite || 'Monsieur');
   const [conseiller, setConseiller] = useState('');
   const [telephoneConseiller, setTelephoneConseiller] = useState('');
   const [telephoneClient, setTelephoneClient] = useState(clientInfo.telephone || '');
@@ -73,7 +74,7 @@ export default function Report() {
 
   // Prepare complete client info including address
   const completeClientInfo = {
-    civilite: clientInfo.civilite,
+    civilite: civilite,
     nom: clientInfo.nom,
     prenom: clientInfo.prenom,
     adresse: address.rue || '',
@@ -171,17 +172,17 @@ export default function Report() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Civilité
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  value={clientInfo.civilite || ''}
-                  disabled
-                  className="w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Civilité
+                </label>
+                <select
+                  value={civilite}
+                  onChange={(e) => setCivilite(e.target.value)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="Monsieur">Monsieur</option>
+                  <option value="Madame">Madame</option>
+                </select>
               </div>
 
               <div>
