@@ -17,6 +17,8 @@ export default function Report() {
   const [pdl, setPdl] = useState('');
   const [conseiller, setConseiller] = useState('');
   const [telephoneConseiller, setTelephoneConseiller] = useState('');
+  const [telephoneClient, setTelephoneClient] = useState(clientInfo.telephone || '');
+  const [emailClient, setEmailClient] = useState(clientInfo.email || '');
   const [commentaire, setCommentaire] = useState('');
   const { parameters, projection, calculateProjection } = useFinancialProjection();
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -78,8 +80,8 @@ export default function Report() {
     codePostal: address.codePostal || '',
     ville: address.ville || '',
     region: address.region || '',
-    telephone: clientInfo.telephone,
-    email: clientInfo.email,
+    telephone: telephoneClient,
+    email: emailClient,
     pdl: pdl,
     date: formatDate(new Date()),
     ensoleillement: `${getSunshineHours(address.codePostal?.substring(0, 2) || '75')} kWh/m²/an`,
@@ -187,11 +189,11 @@ export default function Report() {
                   Téléphone client
                 </label>
                 <input
-                  type="text"
-                  value={clientInfo.telephone || ''}
-                  disabled
-                  placeholder="Non renseigné"
-                  className="w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500"
+                  type="tel"
+                  value={telephoneClient}
+                  onChange={(e) => setTelephoneClient(e.target.value)}
+                  placeholder="06 12 34 56 78"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
@@ -200,11 +202,11 @@ export default function Report() {
                   Email client
                 </label>
                 <input
-                  type="text"
-                  value={clientInfo.email || ''}
-                  disabled
-                  placeholder="Non renseigné"
-                  className="w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500"
+                  type="email"
+                  value={emailClient}
+                  onChange={(e) => setEmailClient(e.target.value)}
+                  placeholder="client@exemple.fr"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             </div>
