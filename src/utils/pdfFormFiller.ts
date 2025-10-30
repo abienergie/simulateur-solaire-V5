@@ -5,6 +5,7 @@ import { FinancialProjection } from '../types/financial';
 import { getShadingLabel } from './shadingLabels';
 import { getOrientationCoefficient } from './orientationCoefficients';
 import { getOrientationLabel } from './orientationMapping';
+import { getPriceFromPower, getSubscriptionPrice } from './calculations/priceCalculator';
 
 interface ClientInfo {
   nom: string;
@@ -148,37 +149,30 @@ function safeSetTextField(form: any, fieldName: string, value: string): void {
 // Get pricing data from localStorage
 function getPricingDataFromStorage(): PricingData | null {
   try {
+    console.log('📄 PDF: Getting pricing data from storage...');
+
     // Get financial mode
     const financingMode = localStorage.getItem('financialMode') as 'cash' | 'subscription' || 'cash';
-    
+    console.log('📄 PDF: Financing mode:', financingMode);
+
     // Get base price
     const solarResults = localStorage.getItem('solarResults');
     let basePrice = 0;
     let puissanceCrete = 0;
-    
+
     if (solarResults) {
       const results = JSON.parse(solarResults);
       puissanceCrete = results.puissanceCrete || 0;
-      
-      // Get installation prices from localStorage
-      const savedPrices = localStorage.getItem('installation_prices');
-      const customPrices = savedPrices ? JSON.parse(savedPrices) : [];
-      
-      // Find price for this power
-      const exactMatch = customPrices.find((p: any) => Math.abs(p.power - puissanceCrete) < 0.01);
-      if (exactMatch) {
-        basePrice = exactMatch.price;
-      } else {
-        // Default prices if no custom price found
-        const defaultPrices: { [key: number]: number } = {
-          2.5: 6890, 3.0: 7890, 3.5: 8890, 4.0: 9890, 4.5: 10890,
-          5.0: 11890, 5.5: 12890, 6.0: 14890, 6.5: 15890, 7.0: 16890,
-          7.5: 17890, 8.0: 18890, 8.5: 19890, 9.0: 19890
-        };
-        
-        // Round to nearest 0.5
-        const roundedPower = Math.round(puissanceCrete * 2) / 2;
-        basePrice = defaultPrices[roundedPower] || 0;
+      console.log('📄 PDF: Puissance crête:', puissanceCrete, 'kWc');
+
+      // Use the same price calculation as in the financial projection
+      // This ensures consistency across the app
+      try {
+        basePrice = getPriceFromPower(puissanceCrete);
+        console.log(`📄 PDF: Using price from priceCalculator: ${basePrice}€ for ${puissanceCrete} kWc`);
+      } catch (priceError) {
+        console.error('📄 PDF: Error getting price from priceCalculator:', priceError);
+        throw priceError;
       }
     }
     
@@ -281,46 +275,29 @@ function getPricingDataFromStorage(): PricingData | null {
     
     // Get subscription details if applicable
     let subscriptionDetails = undefined;
-    
+
     if (financingMode === 'subscription') {
       const duration = parseInt(localStorage.getItem('subscriptionDuration') || '20', 10);
-      
-      // Subscription price table
-      const subscriptionTable: {[key: string]: {[key: number]: number}} = {
-        '25': {
-          2.5: 49.00, 3.0: 59.00, 3.5: 68.50, 4.0: 78.00, 4.5: 87.00,
-          5.0: 96.00, 5.5: 105.50, 6.0: 115.00, 6.5: 124.00,
-          7.0: 132.00, 7.5: 140.00, 8.0: 149.00, 8.5: 158.00, 9.0: 167.00
-        },
-        '20': {
-          2.5: 51.60, 3.0: 63.60, 3.5: 72.00, 4.0: 82.80, 4.5: 92.00,
-          5.0: 100.80, 5.5: 111.60, 6.0: 120.00, 6.5: 129.60,
-          7.0: 138.00, 7.5: 146.40, 8.0: 156.00, 8.5: 164.40, 9.0: 174.00
-        },
-        '15': {
-          2.5: 56.40, 3.0: 73.20, 3.5: 80.40, 4.0: 91.20, 4.5: 102.00,
-          5.0: 111.60, 5.5: 122.40, 6.0: 130.80, 6.5: 142.80,
-          7.0: 150.00, 7.5: 159.60, 8.0: 169.20, 8.5: 177.60, 9.0: 189.60
-        },
-        '10': {
-          2.5: 67.20, 3.0: 86.40, 3.5: 97.20, 4.0: 106.80, 4.5: 120.00,
-          5.0: 134.40, 5.5: 144.00, 6.0: 153.60, 6.5: 165.60,
-          7.0: 174.00, 7.5: 178.80, 8.0: 192.00, 8.5: 200.40, 9.0: 206.40
-        }
-      };
-      
-      // Round power to nearest 0.5
-      const roundedPower = Math.round(puissanceCrete * 2) / 2;
-      const monthlyPayment = subscriptionTable[duration.toString()]?.[roundedPower] || 0;
-      
-      // Calculate deposit (2 months) - ONLY based on subscription price, not including MyLight
-      const deposit = monthlyPayment * 2;
-      
-      subscriptionDetails = {
-        monthlyPayment,
-        duration,
-        deposit: freeDeposit ? 0 : deposit
-      };
+      console.log('📄 PDF: Getting subscription price for', puissanceCrete, 'kWc,', duration, 'years');
+
+      // Use the same subscription price calculation as in the financial projection
+      // This ensures consistency with Supabase subscription_prices table
+      try {
+        const monthlyPayment = getSubscriptionPrice(puissanceCrete, duration);
+        console.log(`📄 PDF: Using subscription price from Supabase: ${monthlyPayment}€/mois for ${puissanceCrete} kWc over ${duration} years`);
+
+        // Calculate deposit (2 months) - ONLY based on subscription price, not including MyLight
+        const deposit = monthlyPayment * 2;
+
+        subscriptionDetails = {
+          monthlyPayment,
+          duration,
+          deposit: freeDeposit ? 0 : deposit
+        };
+      } catch (subscriptionError) {
+        console.error('📄 PDF: Error getting subscription price:', subscriptionError);
+        throw subscriptionError;
+      }
     }
     
     // Build pricing items

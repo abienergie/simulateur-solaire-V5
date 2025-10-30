@@ -228,16 +228,18 @@ export default function PdfReportGenerator({
       
     } catch (err) {
       console.error('Error generating PDF:', err);
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
       let errorMessage = 'Une erreur est survenue lors de la génération du PDF';
-      
+
       if (err instanceof Error) {
         if (err.message.includes('Failed to fetch')) {
           errorMessage = 'Impossible d\'accéder au modèle de rapport PDF. Veuillez vérifier votre connexion internet et réessayer.';
         } else {
-          errorMessage = err.message;
+          // Show the actual error message for debugging
+          errorMessage = `Erreur: ${err.message}`;
         }
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsGenerating(false);
