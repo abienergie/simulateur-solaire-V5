@@ -1755,6 +1755,7 @@ export default function DataRetrieval({ ask, onBack }: DataRetrievalProps) {
             hpHcTotals={undefined}
             hpHcMonthly={[]}
             hpHcWeekly={[]}
+            dataType="production"
           />
         </div>
       )}
@@ -1896,6 +1897,7 @@ export default function DataRetrieval({ ask, onBack }: DataRetrievalProps) {
                 loading={false}
                 error={null}
                 title="Production solaire injectée (Switchgrid)"
+                dataType="production"
               />
             </div>
           )}
