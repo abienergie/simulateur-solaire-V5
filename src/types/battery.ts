@@ -17,7 +17,7 @@ export interface VirtualBattery {
 }
 
 export interface BatterySelection {
-  type: 'physical' | 'virtual' | 'mybattery' | null;
+  type: 'physical' | 'virtual' | 'mybattery' | 'urbansolar' | null;
   model?: PhysicalBattery;
   virtualCapacity?: number;
   includeSmartCharger?: boolean;

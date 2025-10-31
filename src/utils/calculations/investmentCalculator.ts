@@ -11,6 +11,7 @@ export interface InvestmentBreakdown {
   ecojoko: number;
   smartBatterySetup: number;
   myBatterySetup: number;
+  urbanSolarSetup: number;
   subtotal: number;
   subsidies: number;
   commercialDiscount: number;
@@ -64,13 +65,15 @@ export function calculateTotalInvestment(
   // Setup fees for virtual storage solutions
   const freeBatterySetup = localStorage.getItem('promo_free_battery_setup') === 'true';
   const freeSmartBatterySetup = localStorage.getItem('promo_free_smart_battery_setup') === 'true';
-  
+  const freeUrbanSolarSetup = localStorage.getItem('promo_free_urbansolar_setup') === 'true';
+
   const myBatterySetup = parameters.batterySelection?.type === 'mybattery' && !freeBatterySetup ? convertPrice(179) : 0;
+  const urbanSolarSetup = parameters.batterySelection?.type === 'urbansolar' && !freeUrbanSolarSetup ? convertPrice(299) : 0;
   const smartBatterySetup = parameters.batterySelection?.type === 'virtual' && !freeSmartBatterySetup ? convertPrice(2000) : 0;
-  
+
   // Calculate subtotal
-  const subtotal = baseInstallation + enphaseUpgrade + physicalBattery + smartCharger + 
-                  mountingSystemCost + ecojokoPrice + myBatterySetup + smartBatterySetup;
+  const subtotal = baseInstallation + enphaseUpgrade + physicalBattery + smartCharger +
+                  mountingSystemCost + ecojokoPrice + myBatterySetup + urbanSolarSetup + smartBatterySetup;
   
   // Deductions
   const subsidies = parameters.connectionType === 'surplus' ? parameters.primeAutoconsommation : 0;
@@ -89,6 +92,7 @@ export function calculateTotalInvestment(
     ecojoko: ecojokoPrice,
     smartBatterySetup,
     myBatterySetup,
+    urbanSolarSetup,
     subtotal,
     subsidies,
     commercialDiscount,
