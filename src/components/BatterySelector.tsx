@@ -41,6 +41,7 @@ export default function BatterySelector({
   const [batteryOptions, setBatteryOptions] = useState({
     physicalBattery: true,
     myBattery: true,
+    urbanSolar: true,
     smartBattery: true
   });
   const [revenuFiscal, setRevenuFiscal] = useState(() => {
@@ -81,7 +82,7 @@ export default function BatterySelector({
           setHasElectricVehicle(true);
           setIncludeSmartCharger(true);
         }
-      } else if (sel.type === 'physical' || sel.type === 'mybattery') {
+      } else if (sel.type === 'physical' || sel.type === 'mybattery' || sel.type === 'urbansolar') {
         setShowOptions(true);
       }
     } catch (e) {
@@ -130,7 +131,7 @@ export default function BatterySelector({
     prevFormula.current = batteryFormula;
   }, [batteryFormula, defaultAutoconsommation, onChange]);
 
-  const handleTypeChange = (type: 'physical' | 'virtual' | 'mybattery' | null) => {
+  const handleTypeChange = (type: 'physical' | 'virtual' | 'mybattery' | 'urbansolar' | null) => {
     let newAutoconsommation = defaultAutoconsommation;
     
     if (type === 'virtual') {
@@ -235,6 +236,11 @@ export default function BatterySelector({
   // MyBattery: 1€ HT/kWc/mois → 1.20€ TTC/kWc/mois (avec TVA 20%)
   const monthlyMyBatteryCostTTC = installedPower * 1.20;
   const monthlyMyBatteryCostHT = calculateHT(monthlyMyBatteryCostTTC);
+
+  // Urban Solar: 1€ HT/kWc/mois → 1.20€ TTC/kWc/mois (avec TVA 20%)
+  const monthlyUrbanSolarCostTTC = installedPower * 1.20;
+  const monthlyUrbanSolarCostHT = calculateHT(monthlyUrbanSolarCostTTC);
+
   const showVAT = clientInfo.typeClient === 'professionnel' && clientInfo.assujettieATVA === true;
 
   if (connectionType === 'total_sale') {
@@ -289,7 +295,7 @@ export default function BatterySelector({
               </p>
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {batteryOptions.physicalBattery && showPhysicalBatteryOption && (
               <button
                 onClick={() => handleTypeChange('physical')}
@@ -319,6 +325,23 @@ export default function BatterySelector({
                 <div className="flex flex-col items-center gap-2">
                   <CloudSun className="h-6 w-6 text-gray-400" />
                   <span className="font-medium">MyBattery</span>
+                  <span className="text-xs text-gray-500">Stockage virtuel</span>
+                </div>
+              </button>
+            )}
+
+            {batteryOptions.urbanSolar && (
+              <button
+                onClick={() => handleTypeChange('urbansolar')}
+                className={`p-4 rounded-lg border-2 transition-colors ${
+                  value.type === 'urbansolar'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <CloudSun className="h-6 w-6 text-orange-400" />
+                  <span className="font-medium">Urban Solar</span>
                   <span className="text-xs text-gray-500">Stockage virtuel</span>
                 </div>
               </button>
@@ -621,6 +644,54 @@ export default function BatterySelector({
                   <p className="text-sm text-blue-800">
                     Le surplus récupéré = prix du kWh - {formatCurrency(0.0996)} de taxes
                   </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {value.type === 'urbansolar' && (
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h4 className="font-medium text-orange-900 mb-3">Urban Solar - Batterie virtuelle nouvelle génération</h4>
+                <div className="space-y-3">
+                  <p className="text-sm text-orange-800">
+                    Urban Solar offre une solution de stockage virtuel flexible et sans contrainte matérielle pour valoriser au maximum votre production solaire.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-orange-800">✓ Capacité illimitée : stockez toute l'énergie que vous produisez</p>
+                    <p className="text-sm text-orange-800">✓ Aucun équipement à installer : tout se fait virtuellement</p>
+                    <p className="text-sm text-orange-800">✓ Frais d'activation : 299€ TTC</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3">
+                    {showVAT ? (
+                      <div className="text-orange-900">
+                        <p className="text-sm">
+                          Coût mensuel : <strong className="text-lg">{formatCurrency(monthlyUrbanSolarCostHT)} HT</strong>
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {formatCurrency(monthlyUrbanSolarCostTTC)} TTC
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-orange-900">
+                        Coût mensuel : <strong>{formatCurrency(monthlyUrbanSolarCostTTC)}</strong>
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-orange-800">
+                    Le surplus récupéré = prix du kWh - {formatCurrency(0.0996)} de taxes
+                  </p>
+                  <a
+                    href="https://www.urbansolarenergy.fr/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  >
+                    En savoir plus sur Urban Solar
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 </div>
               </div>
             </div>
