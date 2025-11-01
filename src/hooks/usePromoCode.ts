@@ -9,7 +9,7 @@ export interface PromoCode {
   expiration_date: string | null;
   created_at: string;
   type?: 'standard' | 'subscription_only';
-  subscription_effect?: 'free_months' | 'free_deposit' | 'free_battery_setup' | 'free_smart_battery_setup';
+  subscription_effect?: 'free_months' | 'free_deposit' | 'free_battery_setup' | 'free_smart_battery_setup' | 'free_urbansolar_setup';
   free_months?: number;
 }
 
@@ -29,6 +29,7 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
   const [freeDeposit, setFreeDeposit] = useState<boolean>(false);
   const [freeBatterySetup, setFreeBatterySetup] = useState<boolean>(false);
   const [freeSmartBatterySetup, setFreeSmartBatterySetup] = useState<boolean>(false);
+  const [freeUrbanSolarSetup, setFreeUrbanSolarSetup] = useState<boolean>(false);
 
   // Initialize local promo codes in localStorage if not present
   useEffect(() => {
@@ -51,6 +52,7 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
     const savedFreeDeposit = localStorage.getItem('promo_free_deposit');
     const savedFreeBatterySetup = localStorage.getItem('promo_free_battery_setup');
     const savedFreeSmartBatterySetup = localStorage.getItem('promo_free_smart_battery_setup');
+    const savedFreeUrbanSolarSetup = localStorage.getItem('promo_free_urbansolar_setup');
     
     if (savedPromoCodes) {
       try {
@@ -84,6 +86,10 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
     
     if (savedFreeSmartBatterySetup) {
       setFreeSmartBatterySetup(savedFreeSmartBatterySetup === 'true');
+    }
+
+    if (savedFreeUrbanSolarSetup) {
+      setFreeUrbanSolarSetup(savedFreeUrbanSolarSetup === 'true');
     }
   }, []);
 
@@ -201,9 +207,10 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
       
       // Calculate total discount
       const totalDiscount = updated.reduce((sum, code) => {
-        // Ne pas compter les codes qui offrent des services (SMARTFREE, BATTERYFREE)
-        if (code.subscription_effect === 'free_smart_battery_setup' || 
-            code.subscription_effect === 'free_battery_setup') {
+        // Ne pas compter les codes qui offrent des services (SMARTFREE, BATTERYFREE, URBANFREE)
+        if (code.subscription_effect === 'free_smart_battery_setup' ||
+            code.subscription_effect === 'free_battery_setup' ||
+            code.subscription_effect === 'free_urbansolar_setup') {
           return sum;
         }
         return sum + (code.discount || 0);
@@ -251,6 +258,15 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
         localStorage.setItem('promo_free_smart_battery_setup', 'true');
       } else {
         localStorage.removeItem('promo_free_smart_battery_setup');
+      }
+
+      // Check for free Urban Solar setup
+      const hasFreeUrbanSolarSetup = updated.some(code => code.subscription_effect === 'free_urbansolar_setup');
+      setFreeUrbanSolarSetup(hasFreeUrbanSolarSetup);
+      if (hasFreeUrbanSolarSetup) {
+        localStorage.setItem('promo_free_urbansolar_setup', 'true');
+      } else {
+        localStorage.removeItem('promo_free_urbansolar_setup');
       }
       
       // Save applied codes to localStorage
@@ -369,12 +385,14 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
     setFreeDeposit(false);
     setFreeBatterySetup(false);
     setFreeSmartBatterySetup(false);
+    setFreeUrbanSolarSetup(false);
     localStorage.removeItem('applied_promo_codes');
     localStorage.removeItem('promo_discount');
     localStorage.removeItem('promo_free_months');
     localStorage.removeItem('promo_free_deposit');
     localStorage.removeItem('promo_free_battery_setup');
     localStorage.removeItem('promo_free_smart_battery_setup');
+    localStorage.removeItem('promo_free_urbansolar_setup');
   };
 
   return {
@@ -386,6 +404,7 @@ export function usePromoCode(financingMode: 'cash' | 'subscription' = 'cash') {
     freeDeposit,
     freeBatterySetup,
     freeSmartBatterySetup,
+    freeUrbanSolarSetup,
     loading,
     error,
     applyPromoCode,

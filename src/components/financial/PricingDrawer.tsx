@@ -50,16 +50,17 @@ export default function PricingDrawer({
 }: PricingDrawerProps) {
   const { settings } = useFinancialSettings();
   const { clientInfo } = useClient();
-  const { 
+  const {
     promoCodes,
     validPromoCodes,
-    applyPromoCode, 
+    applyPromoCode,
     clearPromoCodes,
-    discount, 
-    freeMonths, 
-    freeDeposit, 
+    discount,
+    freeMonths,
+    freeDeposit,
     freeBatterySetup,
-    freeSmartBatterySetup
+    freeSmartBatterySetup,
+    freeUrbanSolarSetup
   } = usePromoCode(financingMode);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [promoCodeMessage, setPromoCodeMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
@@ -70,6 +71,7 @@ export default function PricingDrawer({
 
   // Battery type checks
   const isMyBattery = batterySelection?.type === 'mybattery';
+  const isUrbanSolar = batterySelection?.type === 'urbansolar';
   const isSmartBattery = batterySelection?.type === 'virtual';
   const isPhysicalBattery = batterySelection?.type === 'physical';
 
@@ -81,10 +83,11 @@ export default function PricingDrawer({
 
   // Setup fees (converted to HT if VAT enabled)
   const myBatteryFee = isMyBattery ? (freeBatterySetup ? 0 : getPrice(179)) : 0;
+  const urbanSolarFee = isUrbanSolar ? (freeUrbanSolarSetup ? 0 : getPrice(299)) : 0;
   const smartBatteryFee = isSmartBattery ? (freeSmartBatterySetup ? 0 : getPrice(2000)) : 0;
 
   // Calculate setup fees and include smart charger in cash mode
-  const setupFees = myBatteryFee + smartBatteryFee;
+  const setupFees = myBatteryFee + urbanSolarFee + smartBatteryFee;
 
   // Include Ecojoko price if selected (converted to HT if VAT enabled)
   const ecojokoActualPrice = includeEcojoko && !freeEcojoko ? getPrice(ecojokoPrice) : 0;
@@ -98,11 +101,13 @@ export default function PricingDrawer({
   // Calculate monthly battery cost (converted to HT if VAT enabled)
   const monthlyBatteryCost = isMyBattery
     ? getPrice(installedPower * 1.20) // MyBattery: 1.20€/kWc/month
-    : isSmartBattery && batterySelection?.virtualCapacity
-      ? getPrice(myLightPrice / 12) // Smart Battery: based on capacity
-      : isPhysicalBattery && batterySelection?.model?.monthlyPrice
-        ? getPrice(batterySelection.model.monthlyPrice) // Physical battery: monthly price from model
-        : 0;
+    : isUrbanSolar
+      ? getPrice(installedPower * 1.20) // Urban Solar: 1.20€/kWc/month (same as MyBattery)
+      : isSmartBattery && batterySelection?.virtualCapacity
+        ? getPrice(myLightPrice / 12) // Smart Battery: based on capacity
+        : isPhysicalBattery && batterySelection?.model?.monthlyPrice
+          ? getPrice(batterySelection.model.monthlyPrice) // Physical battery: monthly price from model
+          : 0;
 
   // Total monthly payment including battery (converted to HT if VAT enabled)
   const monthlyTotal = getPrice(subscriptionPrice) + getPrice(myLightPrice / 12) + (isPhysicalBattery ? monthlyBatteryCost : 0);
@@ -184,6 +189,9 @@ export default function PricingDrawer({
     if (freeSmartBatterySetup) {
       localStorage.setItem('promo_free_smart_battery_setup', 'true');
     }
+    if (freeUrbanSolarSetup) {
+      localStorage.setItem('promo_free_urbansolar_setup', 'true');
+    }
     if (freeEcojoko) {
       localStorage.setItem('promo_free_ecojoko', 'true');
     }
@@ -208,6 +216,7 @@ export default function PricingDrawer({
     freeDeposit,
     freeBatterySetup,
     freeSmartBatterySetup,
+    freeUrbanSolarSetup,
     validPromoCodes,
     includeEcojoko,
     freeEcojoko,
@@ -405,6 +414,20 @@ export default function PricingDrawer({
                       </div>
                     )}
 
+                    {isUrbanSolar && (
+                      <div className="flex justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <Battery className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-600">Frais d'activation Urban Solar</span>
+                        </div>
+                        {freeUrbanSolarSetup ? (
+                          <span className="font-medium line-through">{formatCurrency(getPrice(299))}</span>
+                        ) : (
+                          <span className="font-medium">{formatCurrency(getPrice(299))}</span>
+                        )}
+                      </div>
+                    )}
+
                     {isSmartBattery && (
                       <div className="flex justify-between text-sm">
                         <div className="flex items-center gap-1">
@@ -576,6 +599,31 @@ export default function PricingDrawer({
                         {freeBatterySetup && (
                           <p className="text-xs text-green-700 mt-1 font-medium">
                             Frais d'activation offerts avec le code {validPromoCodes.find(c => c.subscription_effect === 'free_battery_setup')?.code}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {isUrbanSolar && (
+                      <div className="mt-3 bg-orange-50 p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Battery className="h-4 w-4 text-orange-600" />
+                          <h4 className="text-sm font-medium text-orange-900">Frais d'activation Urban Solar</h4>
+                        </div>
+                        {freeUrbanSolarSetup ? (
+                          <div className="flex justify-between text-sm text-orange-800">
+                            <span className="line-through">Frais unique de mise en service</span>
+                            <span className="font-medium line-through">{formatCurrency(299)}</span>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between text-sm text-orange-800">
+                            <span>Frais unique de mise en service</span>
+                            <span className="font-medium">{formatCurrency(299)}</span>
+                          </div>
+                        )}
+                        {freeUrbanSolarSetup && (
+                          <p className="text-xs text-green-700 mt-1 font-medium">
+                            Frais d'activation offerts avec le code {validPromoCodes.find(c => c.subscription_effect === 'free_urbansolar_setup')?.code}
                           </p>
                         )}
                       </div>

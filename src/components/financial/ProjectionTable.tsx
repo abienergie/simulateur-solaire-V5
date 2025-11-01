@@ -33,6 +33,11 @@ export default function ProjectionTable({
   const prixFinal = projection.prixFinal;
   const showMyLight = projection.projectionAnnuelle[0].coutMyLight > 0;
 
+  // Determine battery label based on type
+  const batteryLabel = parameters?.batterySelection?.type === 'urbansolar' ? 'URBAN' :
+                       parameters?.batterySelection?.type === 'mybattery' ? 'MYBATTERY' :
+                       'MYLIGHT';
+
   // Calculate totals for 20 years
   const first20Years = projection.projectionAnnuelle.slice(0, 20);
   const total20YearsEconomies = first20Years.reduce((sum, year) => sum + year.economiesAutoconsommation, 0);
@@ -146,7 +151,7 @@ export default function ProjectionTable({
                 )}
                 {showMyLight && (
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    MyLight
+                    {batteryLabel}
                   </th>
                 )}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -184,7 +189,7 @@ export default function ProjectionTable({
                       )}
                       {showMyLight && (
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          MyLight
+                          {batteryLabel}
                         </th>
                       )}
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">

@@ -35,8 +35,9 @@ function calculateYearlyValues(
   // Calculate revenue from surplus/resale
   let revenusRevente = 0;
   
-  if (params.batterySelection?.type === 'mybattery') {
-    // For MyBattery: surplus = (kWh price - 0.0996€) * surplus amount
+  if (params.batterySelection?.type === 'mybattery' || params.batterySelection?.type === 'urbansolar') {
+    // For MyBattery and Urban Solar: surplus = (kWh price - 0.0996€) * surplus amount
+    // Use energy revaluation coefficient instead of indexation for virtual batteries
     const prixSurplus = Math.max(0, prixKwhActualise - 0.0996);
     revenusRevente = revente * prixSurplus;
   } else {
@@ -65,9 +66,9 @@ function calculateYearlyValues(
     coutAbonnement += params.calculateWithVAT ? calculateHT(batteryMonthlyPrice) * 12 : batteryMonthlyPrice * 12;
   }
 
-  // MyLight/Battery costs
+  // MyLight/Battery/Urban Solar costs
   let coutMyLight = 0;
-  if (params.batterySelection?.type === 'virtual' || params.batterySelection?.type === 'mybattery') {
+  if (params.batterySelection?.type === 'virtual' || params.batterySelection?.type === 'mybattery' || params.batterySelection?.type === 'urbansolar') {
     if (params.batterySelection.type === 'virtual') {
       // Smart Battery costs - monthly subscription only, no setup fee
       const virtualBattery = VIRTUAL_BATTERIES.find(b => b.capacity === params.batterySelection?.virtualCapacity);
@@ -77,6 +78,10 @@ function calculateYearlyValues(
       }
     } else if (params.batterySelection.type === 'mybattery') {
       // MyBattery: 1.20€/kWc/month (TVA 20%), no setup fee
+      const monthlyPrice = puissanceCrete * 1.20;
+      coutMyLight = params.calculateWithVAT ? calculateHT(monthlyPrice) * 12 : monthlyPrice * 12;
+    } else if (params.batterySelection.type === 'urbansolar') {
+      // Urban Solar: 1.20€/kWc/month (TVA 20%), no setup fee - same as MyBattery
       const monthlyPrice = puissanceCrete * 1.20;
       coutMyLight = params.calculateWithVAT ? calculateHT(monthlyPrice) * 12 : monthlyPrice * 12;
     }

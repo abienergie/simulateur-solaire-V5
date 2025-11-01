@@ -129,6 +129,9 @@ export function getMonthlySubscriptionCost(
   } else if (parameters.batterySelection?.type === 'mybattery') {
     // MyBattery: 1€ HT/kWc/mois → 1.20€ TTC/kWc/mois (avec TVA 20%)
     batteryMonthlyCost = convertPrice(installedPower * 1.20);
+  } else if (parameters.batterySelection?.type === 'urbansolar') {
+    // Urban Solar: 1€ HT/kWc/mois → 1.20€ TTC/kWc/mois (avec TVA 20%) - same as MyBattery
+    batteryMonthlyCost = convertPrice(installedPower * 1.20);
   }
 
   return baseSubscription + batteryMonthlyCost;
