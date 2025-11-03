@@ -57,6 +57,7 @@ export async function generatePDF(
   const freeDeposit = localStorage.getItem('promo_free_deposit') === 'true';
   const freeBatterySetup = localStorage.getItem('promo_free_battery_setup') === 'true';
   const freeSmartBatterySetup = localStorage.getItem('promo_free_smart_battery_setup') === 'true';
+  const freeUrbanSolarSetup = localStorage.getItem('promo_free_urbansolar_setup') === 'true';
   const freeEcojoko = localStorage.getItem('freeEcojoko') === 'true';
   
   // Récupérer les informations sur les batteries
@@ -65,9 +66,12 @@ export async function generatePDF(
   if (batterySelection) {
     try {
       batteryInfo = JSON.parse(batterySelection);
+      console.log('PDF Generator - batteryInfo:', batteryInfo);
     } catch (e) {
       console.error('Erreur lors du parsing des informations de batterie:', e);
     }
+  } else {
+    console.warn('PDF Generator - Aucune batterySelection dans localStorage');
   }
   
   // Récupérer les informations sur les technologies installées
@@ -201,6 +205,9 @@ export async function generatePDF(
       case 'mybattery':
         installationData.push(['Stockage virtuel', 'MyBattery']);
         break;
+      case 'urbansolar':
+        installationData.push(['Stockage virtuel', 'Urban Solar']);
+        break;
     }
   }
   
@@ -290,6 +297,7 @@ export async function generatePDF(
     
     // Ajouter le prix de la batterie si présente
     if (batteryInfo) {
+      console.log('PDF - Processing battery type:', batteryInfo.type);
       if (batteryInfo.type === 'physical' && batteryInfo.model) {
         financialData.push(['Batterie physique', formatCurrency(batteryInfo.model.oneTimePrice || 0)]);
       } else if (batteryInfo.type === 'virtual') {
@@ -309,6 +317,13 @@ export async function generatePDF(
           financialData.push(['Frais d\'activation MyBattery', `${formatCurrency(0)} (offert)`]);
         } else {
           financialData.push(['Frais d\'activation MyBattery', formatCurrency(179)]);
+        }
+      } else if (batteryInfo.type === 'urbansolar') {
+        // Vérifier si les frais Urban Solar sont offerts
+        if (freeUrbanSolarSetup) {
+          financialData.push(['Frais d\'activation Urban Solar', `${formatCurrency(0)} (offert)`]);
+        } else {
+          financialData.push(['Frais d\'activation Urban Solar', formatCurrency(299)]);
         }
       }
     }
@@ -406,6 +421,13 @@ export async function generatePDF(
           financialData.push(['Frais d\'activation MyBattery', `${formatCurrency(0)} (offert)`]);
         } else {
           financialData.push(['Frais d\'activation MyBattery', formatCurrency(179)]);
+        }
+      } else if (batteryInfo.type === 'urbansolar') {
+        // Vérifier si les frais Urban Solar sont offerts
+        if (freeUrbanSolarSetup) {
+          financialData.push(['Frais d\'activation Urban Solar', `${formatCurrency(0)} (offert)`]);
+        } else {
+          financialData.push(['Frais d\'activation Urban Solar', formatCurrency(299)]);
         }
       }
     }

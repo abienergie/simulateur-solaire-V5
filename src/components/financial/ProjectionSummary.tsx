@@ -19,13 +19,19 @@ function getEquivalentExample(co2Savings: number): string {
 }
 
 export default function ProjectionSummary({ projection }: ProjectionSummaryProps) {
-  // Calcul des moyennes sur 20 ans
-  const first20Years = projection.projectionAnnuelle.slice(0, 20);
-  const moyenneEconomies = first20Years.reduce((sum, year) => sum + year.economiesAutoconsommation, 0) / 20;
-  const moyenneRevente = first20Years.reduce((sum, year) => sum + year.revenusRevente, 0) / 20;
+  // Synthèse toujours sur 25 ans
+  const synthesePeriod = 25;
+
+  // Calcul des moyennes sur 25 ans
+  const selectedYears = projection.projectionAnnuelle.slice(0, synthesePeriod);
+  const moyenneEconomies = selectedYears.reduce((sum, year) => sum + year.economiesAutoconsommation, 0) / synthesePeriod;
+  const moyenneRevente = selectedYears.reduce((sum, year) => sum + year.revenusRevente, 0) / synthesePeriod;
   const moyenneTotal = moyenneEconomies + moyenneRevente;
 
-  // Calcul du rendement moyen sur 20 ans (uniquement pour le paiement comptant)
+  // Calcul des gains totaux sur 25 ans
+  const totalGainsSelected = selectedYears.reduce((sum, year) => sum + year.gainTotal, 0);
+
+  // Calcul du rendement moyen (uniquement pour le paiement comptant)
   const isSubscription = projection.projectionAnnuelle[0].coutAbonnement > 0;
   const rendementMoyen = !isSubscription ? (moyenneTotal / projection.prixFinal * 100) : null;
 
@@ -51,7 +57,7 @@ export default function ProjectionSummary({ projection }: ProjectionSummaryProps
         <div className="bg-white p-5 rounded-lg shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <PiggyBank className="h-6 w-6 text-green-500" />
-            <h4 className="font-medium text-gray-900">Revenus moyens annuels (sur 20 ans)</h4>
+            <h4 className="font-medium text-gray-900">Revenus moyens annuels (sur 25 ans)</h4>
           </div>
           <p className="text-2xl font-bold text-green-600">
             {formatCurrency(moyenneTotal)}
@@ -70,10 +76,10 @@ export default function ProjectionSummary({ projection }: ProjectionSummaryProps
         <div className="bg-white p-5 rounded-lg shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <TrendingUp className="h-6 w-6 text-blue-500" />
-            <h4 className="font-medium text-gray-900">Gains totaux sur 30 ans</h4>
+            <h4 className="font-medium text-gray-900">Gains totaux sur 25 ans</h4>
           </div>
           <p className="text-2xl font-bold text-blue-600">
-            {formatCurrency(projection.totalGains)}
+            {formatCurrency(totalGainsSelected)}
           </p>
           <p className="mt-2 text-sm text-gray-600">
             Cumul des économies et de la revente

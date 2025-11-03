@@ -14,18 +14,21 @@ interface ReturnOnInvestmentChartProps {
   inverterType?: 'central' | 'solenso' | 'enphase';
   mountingSystem?: 'surimposition' | 'bac-lestes' | 'integration';
   includeEcojoko?: boolean;
+  selectedPeriod?: 20 | 25 | 30;
 }
 
-export default function ReturnOnInvestmentChart({ 
-  projection, 
+export default function ReturnOnInvestmentChart({
+  projection,
   isSubscription = false,
   onShowInvestmentDetails,
   parameters,
   installedPower = 0,
   inverterType = 'central',
   mountingSystem = 'surimposition',
-  includeEcojoko = false
+  includeEcojoko = false,
+  selectedPeriod = 25
 }: ReturnOnInvestmentChartProps) {
+
   const data = [];
 
   // Calculate initial cost using the investment calculator
@@ -69,9 +72,14 @@ export default function ReturnOnInvestmentChart({
 
   let cumulativeFlow = -initialCost;
 
-  for (let i = 0; i < Math.min(30, projection.projectionAnnuelle.length); i++) {
+  for (let i = 0; i < Math.min(selectedPeriod, projection.projectionAnnuelle.length); i++) {
     const year = projection.projectionAnnuelle[i];
     cumulativeFlow += year.gainTotal;
+
+    // Add prime à l'autoconsommation in year 1
+    if (i === 0 && projection.primeAutoconsommation > 0) {
+      cumulativeFlow += projection.primeAutoconsommation;
+    }
 
     data.push({
       annee: `An ${i + 1}`,
@@ -208,7 +216,7 @@ export default function ReturnOnInvestmentChart({
 
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="text-sm text-blue-600 font-medium mb-1">
-            Solde de trésorerie à 30 ans
+            Solde de trésorerie à {selectedPeriod} ans
           </div>
           <div className="text-2xl font-bold text-blue-700">
             {formatCurrency(data[data.length - 1]?.fluxCumule || 0)}
